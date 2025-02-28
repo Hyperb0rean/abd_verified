@@ -1,3 +1,5 @@
+-Q ~/.opam/coq/.opam-switch/sources/coq-verdi.dev/ Verdi
+
 -Q theories ABD
 
 ./theories/Example.v

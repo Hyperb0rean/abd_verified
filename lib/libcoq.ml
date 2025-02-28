@@ -1,16 +1,20 @@
 
+type __ = Obj.t
+
 type nat =
 | O
 | S of nat
 
 
 
+type fin = __
+
 module ABD =
  struct
-  (** val n : nat **)
+  (** val num_processors : nat **)
 
-  let n =
-    failwith "AXIOM TO BE REALIZED (ABD.Example.ABD.n)"
+  let num_processors =
+    failwith "AXIOM TO BE REALIZED (ABD.Example.ABD.num_processors)"
 
   type coq_Value (* AXIOM TO BE REALIZED *)
 
@@ -26,7 +30,7 @@ module ABD =
   let label_eq =
     failwith "AXIOM TO BE REALIZED (ABD.Example.ABD.label_eq)"
 
-  type coq_Processor = nat
+  type coq_Processor = fin
 
   type coq_Message =
   | Write of coq_Label * coq_Value
@@ -69,4 +73,14 @@ module ABD =
 
   let labels p =
     p.labels
+
+  type coq_GlobalState =
+    (coq_Processor * coq_ProcessorState) list
+    (* singleton inductive, whose constructor was Build_GlobalState *)
+
+  (** val processors :
+      coq_GlobalState -> (coq_Processor * coq_ProcessorState) list **)
+
+  let processors g =
+    g
  end

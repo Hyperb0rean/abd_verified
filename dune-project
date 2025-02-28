@@ -1,5 +1,5 @@
 (lang dune 3.17)
-
+(using coq 0.6)
 (name abd)
 
 (generate_opam_files true)
