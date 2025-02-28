@@ -1,8 +1,8 @@
 -Q ~/.opam/coq/.opam-switch/sources/coq-verdi.dev/ Verdi
 
--Q theories ABD
+-Q theories Vecclock
 
-./theories/Example.v
+./theories/Vecclock.v
 
 -Q lib Lib
 

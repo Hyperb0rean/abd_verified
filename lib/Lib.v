@@ -1,4 +1,5 @@
-Require Import ABD.Example.
+From Vecclock Require Import Vecclock.
+From Verdi Require Import Verdi.
 Require Extraction.
 
 Extract Inductive bool => "bool" [ "true" "false" ].
@@ -11,4 +12,4 @@ Set Extraction Optimize.
 
 Set Extraction Output Directory "lib".
 
-Extraction "libcoq.ml" ABD.
+(* Extraction "libcoq.ml" Vecclock.VectorClock. *)
