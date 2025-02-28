@@ -1,0 +1,7 @@
+-Q theories ABD
+
+./theories/Example.v
+
+-Q lib Lib
+
+lib/Lib.v
