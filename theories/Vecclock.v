@@ -200,9 +200,9 @@ Notation "a ~hb~> b" := (happens_before a b) (at level 70).
 
 
 Theorem casuality_theorem :
-  forall s1 s2,
-    ((vclock s1) < (vclock s2)) <->
-    (s1 ~hb~> s2).
+  forall tr1 tr2,
+    (vclock tr1 < vclock tr2) <->
+    (tr1 ~hb~> tr2).
 Proof.
 Admitted.
 

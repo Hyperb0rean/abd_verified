@@ -27,7 +27,7 @@ Vector clocks relation defined as following.
 Main result is isomorphism between happens-before relationship and vector clocks.
 ```v
 Theorem casuality_theorem :
-  forall s1 s2,
-    ((vclock s1) <=< (vclock s2)) <->
-    happens_before s1 s2.
+  forall tr1 tr2,
+    (vclock tr1 < vclock tr2) <->
+    (tr1 ~hb~> tr2).
 ```
