@@ -187,21 +187,15 @@ Definition vector_leq (v1 v2 : Vector) : Prop :=
 Definition vector_lt (v1 v2 : Vector) : Prop :=
   vector_leq v1 v2 /\ exists n, get_counter v1 n < get_counter v2 n.
 
+Notation "a <=< b" := (vector_lt a b) (at level 70).
+
+
 Definition happens_before (s1 s2:  Data) :=
   True.
 
-  Theorem happens_before_implies_vector_ordering :
+Theorem casuality_theorem :
   forall s1 s2,
-    happens_before s1 s2 ->
-    vector_leq (vclock s1) (vclock s2) /\
-    exists n, get_counter (vclock s1) n < get_counter (vclock s2) n.
-Proof.
-Admitted.
-
-Theorem vector_ordering_implies_happens_before :
-  forall s1 s2,
-    vector_leq (vclock s1) (vclock s2) ->
-    (exists n, get_counter (vclock s1) n < get_counter (vclock s2) n) ->
+    ((vclock s1) <=< (vclock s2)) <->
     happens_before s1 s2.
 Proof.
 Admitted.
