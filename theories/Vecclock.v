@@ -149,6 +149,10 @@ Section VectorClock.
        destruct a.
        destruct (fin_eq_dec num_nodes n0 n).
        -- unfold vector_NoDup.
+          apply NoDup_cons_iff.
+          split.
+          +
+            contradict H. 
   Admitted.
 
   Lemma increment_In:
@@ -187,16 +191,18 @@ Definition vector_leq (v1 v2 : Vector) : Prop :=
 Definition vector_lt (v1 v2 : Vector) : Prop :=
   vector_leq v1 v2 /\ exists n, get_counter v1 n < get_counter v2 n.
 
-Notation "a <=< b" := (vector_lt a b) (at level 70).
-
+Notation "a < b" := (vector_lt a b) (at level 70).
 
 Definition happens_before (s1 s2:  Data) :=
   True.
 
+Notation "a ~hb~> b" := (happens_before a b) (at level 70).
+
+
 Theorem casuality_theorem :
   forall s1 s2,
-    ((vclock s1) <=< (vclock s2)) <->
-    happens_before s1 s2.
+    ((vclock s1) < (vclock s2)) <->
+    (s1 ~hb~> s2).
 Proof.
 Admitted.
 
