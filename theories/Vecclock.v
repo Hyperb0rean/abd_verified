@@ -173,8 +173,21 @@ Section VectorClock.
       - apply increment_In. auto.
   Qed.
 
-
+  Fixpoint get_counter (vec : Vector) (n : Name) : nat :=
+  match vec with
+  | [] => 0
+  | (n', c) :: rest =>
+    if fin_eq_dec num_nodes n' n then c else get_counter rest n
+  end.
     
+Definition vector_leq (v1 v2 : Vector) : Prop :=
+  forall n, In n (map fst v1) -> In n (map fst v2) ->
+  get_counter v1 n <= get_counter v2 n.
+
+Definition vector_lt (v1 v2 : Vector) : Prop :=
+  vector_leq v1 v2 /\ exists n, get_counter v1 n < get_counter v2 n.
+
+
 
 
 End VectorClock.
