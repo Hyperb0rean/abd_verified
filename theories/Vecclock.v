@@ -11,42 +11,98 @@ Require Import Verdi.Core.StatePacketPacketDecomposition.
 Set Implicit Arguments.
 
 Require Import List. Import ListNotations.
+Require Import Coq.Logic.FunctionalExtensionality.
 
 Section VectorClock.
-  Variable num_nodes : nat.               (* Total number of nodes *)
-  Definition NodeIndex := fin num_nodes.  (* Finite node indices *)
+  Variable num_nodes : nat.
+  Definition Name := fin num_nodes. 
 
-  (* Vector clock: function from node indices to counters *)
-  Definition Vector := NodeIndex -> nat.
-  Definition init_vector : Vector := fun _ => 0.
+  Definition Vector := Name -> nat.  
+  Inductive Input := Event.          
+  Inductive Output := Ack.           
 
-  (* Per-node state containing its vector clock *)
-  Record NodeState := mkNodeState { my_vector : Vector }.
-  Definition init_node_state : NodeState := mkNodeState init_vector.
+  Record Data := mkData { vclock : Vector }.
+  Definition init_vector : Vector := fun _ => 0. 
 
-  (* Messages carry the sender's vector clock *)
-  Inductive Msg := VC (sender : NodeIndex) (vec : Vector).
+  Definition Nodes := all_fin num_nodes.
+  Lemma all_Names_Nodes : forall n, In n Nodes. 
+  Proof. 
+   apply all_fin_all. 
+  Qed.
+  
+  Lemma NoDup_Nodes : NoDup Nodes. 
+  Proof. 
+    apply all_fin_NoDup. 
+  Qed.
 
-  (* Handler utilities *)
-  Definition increment_clock (vec : Vector) (self : NodeIndex) : Vector :=
-    fun idx  => if (fin_eq_dec num_nodes idx self) 
+  Inductive Msg := Update (vec : Vector). 
+
+  Definition increment (vec : Vector) (n : Name) : Vector :=
+    fun idx => if (fin_eq_dec num_nodes idx n) 
               then S (vec idx) 
               else vec idx.
 
-  Definition merge_vec (v1 v2 : Vector) : Vector :=
+  Definition merge (v1 v2 : Vector) : Vector :=
     fun idx => max (v1 idx) (v2 idx).
 
-  Definition local_handler (self : NodeIndex) (st : NodeState) : NodeState :=
-    mkNodeState (increment_clock (my_vector st) self).
+  Definition init_data : Data := mkData init_vector.
 
-  Definition send_handler (self : NodeIndex) (st : NodeState) : (Msg * NodeState) :=
-    (VC self (my_vector st), local_handler self st).
+  Definition Name_eq_dec := fin_eq_dec num_nodes.
+  Definition Msg_eq_dec : forall x y : Msg, {x = y} + {x <> y}.
+    decide equality. 
+Admitted.
 
-  Definition recv_handler (self : NodeIndex) (msg : Msg) (st : NodeState) : NodeState :=
+  Definition Handler (S : Type) := GenHandler (Name * Msg) S Output unit.
+
+  Fixpoint send_all_aux (m: Msg) (l: list (fin num_nodes)) : Handler Data :=
+  match l with
+  | [] => nop
+  | dst :: tail => send (dst, m) ;;  (send_all_aux m tail)
+  end.
+
+  Definition send_all (m : Msg) : Handler Data :=
+    send_all_aux m (all_fin num_nodes).
+
+
+  Definition InputHandler (n : Name) (i : Input) (s : Data) : Handler Data :=
+    d <- get ;;
+    let new_vec := increment (vclock s) n in
+    put (mkData new_vec) ;;
+    write_output Ack ;;
+    send_all (Update new_vec).
+
+  Definition NetHandler (me : Name) (src: Name) (msg : Msg) (s : Data) : Handler Data :=
     match msg with
-    | VC sender vec =>
-      mkNodeState (increment_clock 
-        (merge_vec (my_vector st) vec) self)
+    | Update vec =>
+      d <- get ;;
+      let vec_after_increment := increment (vclock s) me in  
+      let merged := merge vec_after_increment vec in
+      put (mkData merged)
     end.
+
+  #[global]
+  Instance Vc_BaseParams : BaseParams :=
+    {
+      data := Data;
+      input := Input;
+      output := Output
+    }.
+
+  #[global]
+  Instance Vc_MultiParams : MultiParams Vc_BaseParams :=
+    {
+      name := Name;
+      name_eq_dec := Name_eq_dec;
+      msg := Msg;
+      msg_eq_dec := Msg_eq_dec;
+      nodes := Nodes;
+      all_names_nodes := all_Names_Nodes;
+      no_dup_nodes := NoDup_Nodes;
+      init_handlers := fun _ => init_data;
+      net_handlers := fun me src msg s =>
+                        runGenHandler_ignore s (NetHandler me src msg s);
+      input_handlers := fun nm i s =>
+                        runGenHandler_ignore s (InputHandler nm i s)
+    }.
 
 End VectorClock.
