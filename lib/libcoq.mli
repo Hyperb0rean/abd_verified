@@ -1,54 +1,88 @@
 
 type __ = Obj.t
 
-type nat =
-| O
-| S of nat
-
-
-
-type fin = __
-
-module ABD :
+module Nat :
  sig
-  val num_processors : nat
-
-  type coq_Value (* AXIOM TO BE REALIZED *)
-
-  type coq_Label (* AXIOM TO BE REALIZED *)
-
-  val label_lt : coq_Label -> coq_Label -> bool
-
-  val label_eq : coq_Label -> coq_Label -> bool
-
-  type coq_Processor = fin
-
-  type coq_Message =
-  | Write of coq_Label * coq_Value
-  | AckWrite
-  | ReadRequest
-  | ReadResponse of coq_Label * coq_Value
-  | AckRead
-
-  val coq_Message_rect :
-    (coq_Label -> coq_Value -> 'a1) -> 'a1 -> 'a1 -> (coq_Label -> coq_Value
-    -> 'a1) -> 'a1 -> coq_Message -> 'a1
-
-  val coq_Message_rec :
-    (coq_Label -> coq_Value -> 'a1) -> 'a1 -> 'a1 -> (coq_Label -> coq_Value
-    -> 'a1) -> 'a1 -> coq_Message -> 'a1
-
-  type coq_ProcessorState = { coq_val : (coq_Label * coq_Value);
-                              labels : (coq_Label * coq_Value) list }
-
-  val coq_val : coq_ProcessorState -> coq_Label * coq_Value
-
-  val labels : coq_ProcessorState -> (coq_Label * coq_Value) list
-
-  type coq_GlobalState =
-    (coq_Processor * coq_ProcessorState) list
-    (* singleton inductive, whose constructor was Build_GlobalState *)
-
-  val processors :
-    coq_GlobalState -> (coq_Processor * coq_ProcessorState) list
  end
+
+val list_eq_dec : ('a1 -> 'a1 -> bool) -> 'a1 list -> 'a1 list -> bool
+
+val seq : int -> int -> int list
+
+type baseParams =
+| Build_BaseParams
+
+type data = __
+
+type input = __
+
+type output = __
+
+type multiParams = { msg_eq_dec : (__ -> __ -> bool);
+                     name_eq_dec : (__ -> __ -> bool); nodes : __ list;
+                     init_handlers : (__ -> data);
+                     net_handlers : (__ -> __ -> __ -> data -> (output
+                                    list * data) * (__ * __) list);
+                     input_handlers : (__ -> input -> data -> (output
+                                      list * data) * (__ * __) list) }
+
+type ('w, 's, 'o, 'a) genHandler = 's -> (('a * 'o list) * 's) * 'w list
+
+val ret : 'a4 -> ('a1, 'a2, 'a3, 'a4) genHandler
+
+val bind :
+  ('a1, 'a2, 'a3, 'a4) genHandler -> ('a4 -> ('a1, 'a2, 'a3, 'a5) genHandler)
+  -> ('a1, 'a2, 'a3, 'a5) genHandler
+
+val send : 'a1 -> ('a1, 'a2, 'a3, unit) genHandler
+
+val write_output : 'a3 -> ('a1, 'a2, 'a3, unit) genHandler
+
+val put : 'a2 -> ('a1, 'a2, 'a3, unit) genHandler
+
+val get : ('a1, 'a2, 'a3, 'a2) genHandler
+
+val runGenHandler_ignore :
+  'a2 -> ('a1, 'a2, 'a3, 'a4) genHandler -> ('a3 list * 'a2) * 'a1 list
+
+val nop : ('a1, 'a2, 'a3, unit) genHandler
+
+type name = int
+
+type vector = (name * int) list
+
+type input0 =
+| Local
+| Send of name
+
+type data0 = vector
+  (* singleton inductive, whose constructor was mkData *)
+
+val init_vector : int -> vector
+
+val nodes0 : int -> int list
+
+type msg = vector
+  (* singleton inductive, whose constructor was Update *)
+
+val update_list : int -> vector -> name -> (int -> int) -> vector
+
+val increment : int -> vector -> name -> vector
+
+val merge : int -> vector -> vector -> vector
+
+val init_data : int -> data0
+
+val name_eq_dec0 : int -> int -> int -> bool
+
+val msg_eq_dec0 : int -> msg -> msg -> bool
+
+type 's handler = (name * msg, 's, __, unit) genHandler
+
+val inputHandler : int -> name -> input0 -> data0 -> data0 handler
+
+val netHandler : int -> name -> name -> msg -> data0 -> data0 handler
+
+val vc_BaseParams : int -> baseParams
+
+val vc_MultiParams : int -> multiParams

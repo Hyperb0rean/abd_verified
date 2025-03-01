@@ -17,12 +17,17 @@ Section VectorClock.
   Variable num_nodes : nat.
   Definition Name := fin num_nodes. 
 
-  Definition Vector := Name -> nat.  
-  Inductive Input := Event.          
+  Definition Vector := list (Name * nat).
+  
+  Inductive Input := 
+  | Local
+  | Send (dest: Name).          
   Inductive Output := Ack.           
 
   Record Data := mkData { vclock : Vector }.
-  Definition init_vector : Vector := fun _ => 0. 
+
+  Definition init_vector : Vector :=
+    List.map (fun n => (n, 0)) (all_fin num_nodes).
 
   Definition Nodes := all_fin num_nodes.
   Lemma all_Names_Nodes : forall n, In n Nodes. 
@@ -37,45 +42,57 @@ Section VectorClock.
 
   Inductive Msg := Update (vec : Vector). 
 
-  Definition increment (vec : Vector) (n : Name) : Vector :=
-    fun idx => if (fin_eq_dec num_nodes idx n) 
-              then S (vec idx) 
-              else vec idx.
+  Fixpoint update_list (vec : Vector) (n : Name) (f : nat -> nat) : Vector :=
+    match vec with
+    | [] => []
+    | (n', c) :: rest =>
+      if fin_eq_dec num_nodes n' n
+      then (n', f c) :: rest
+      else (n', c) :: update_list rest n f
+    end.
 
-  Definition merge (v1 v2 : Vector) : Vector :=
-    fun idx => max (v1 idx) (v2 idx).
+  Definition increment (vec : Vector) (n : Name) : Vector :=
+    update_list vec n S.
+
+  Fixpoint merge (v1 v2 : Vector) : Vector :=
+    match v1, v2 with
+    | [], _ => v2
+    | _, [] => v1
+    | (n1, c1) :: rest1, (n2, c2) :: rest2 =>
+      if fin_eq_dec num_nodes n1 n2
+      then (n1, max c1 c2) :: merge rest1 rest2
+      else (n1, c1) :: merge rest1 v2 
+    end.
 
   Definition init_data : Data := mkData init_vector.
 
   Definition Name_eq_dec := fin_eq_dec num_nodes.
+
   Definition Msg_eq_dec : forall x y : Msg, {x = y} + {x <> y}.
-    decide equality. 
-Admitted.
+    decide equality.
+    apply list_eq_dec.
+    decide equality.
+    - apply Nat.eq_dec.
+    - apply Name_eq_dec.
+  Defined.
 
   Definition Handler (S : Type) := GenHandler (Name * Msg) S Output unit.
 
-  Fixpoint send_all_aux (m: Msg) (l: list (fin num_nodes)) : Handler Data :=
-  match l with
-  | [] => nop
-  | dst :: tail => send (dst, m) ;;  (send_all_aux m tail)
-  end.
-
-  Definition send_all (m : Msg) : Handler Data :=
-    send_all_aux m (all_fin num_nodes).
-
-
   Definition InputHandler (n : Name) (i : Input) (s : Data) : Handler Data :=
     d <- get ;;
-    let new_vec := increment (vclock s) n in
+    let new_vec := increment (vclock s) n in 
     put (mkData new_vec) ;;
     write_output Ack ;;
-    send_all (Update new_vec).
+    match i with
+    | Local => nop
+    | Send dest => send (dest, Update new_vec)
+    end.
 
   Definition NetHandler (me : Name) (src: Name) (msg : Msg) (s : Data) : Handler Data :=
     match msg with
     | Update vec =>
       d <- get ;;
-      let vec_after_increment := increment (vclock s) me in  
+      let vec_after_increment := increment (vclock s) me in
       let merged := merge vec_after_increment vec in
       put (mkData merged)
     end.
