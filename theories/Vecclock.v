@@ -187,7 +187,23 @@ Definition vector_leq (v1 v2 : Vector) : Prop :=
 Definition vector_lt (v1 v2 : Vector) : Prop :=
   vector_leq v1 v2 /\ exists n, get_counter v1 n < get_counter v2 n.
 
+Definition happens_before (s1 s2:  Data) :=
+  True.
 
+  Theorem happens_before_implies_vector_ordering :
+  forall s1 s2,
+    happens_before s1 s2 ->
+    vector_leq (vclock s1) (vclock s2) /\
+    exists n, get_counter (vclock s1) n < get_counter (vclock s2) n.
+Proof.
+Admitted.
 
+Theorem vector_ordering_implies_happens_before :
+  forall s1 s2,
+    vector_leq (vclock s1) (vclock s2) ->
+    (exists n, get_counter (vclock s1) n < get_counter (vclock s2) n) ->
+    happens_before s1 s2.
+Proof.
+Admitted.
 
 End VectorClock.
