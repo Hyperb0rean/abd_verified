@@ -11,7 +11,6 @@ Require Import Verdi.Core.StatePacketPacketDecomposition.
 Set Implicit Arguments.
 
 Require Import List. Import ListNotations.
-Require Import Coq.Logic.FunctionalExtensionality.
 
 Section VectorClock.
   Variable num_nodes : nat.
@@ -121,5 +120,61 @@ Section VectorClock.
       input_handlers := fun nm i s =>
                         runGenHandler_ignore s (InputHandler nm i s)
     }.
+
+
+  Definition vector_NoDup (vec: Vector) := NoDup (List.map fst vec).
+
+  Definition vector_In (vec: Vector) := 
+  (forall n, In n (all_fin num_nodes) -> In n (List.map fst vec)).
+
+  Definition vector_complete (vec : Vector) : Prop :=
+     vector_NoDup vec /\ vector_In vec.
+
+  Lemma increment_NoDup: 
+    forall vec n,
+      vector_NoDup vec ->
+      vector_NoDup (increment vec n).
+  Proof.
+    intros.
+    unfold vector_NoDup in H.
+    apply NoDup_map_inv in H.
+    unfold increment; unfold update_list.
+    induction vec; auto.
+    - unfold vector_NoDup.
+      unfold map. apply NoDup_nil.
+    -  apply NoDup_cons_iff in H.
+       destruct H.
+       apply IHvec in H0.
+       clear IHvec.
+       destruct a.
+       destruct (fin_eq_dec num_nodes n0 n).
+       -- unfold vector_NoDup.
+  Admitted.
+
+  Lemma increment_In:
+    forall vec n,
+      vector_In vec ->
+      vector_In (increment vec n).
+  Proof.
+    unfold vector_In.
+    intros v n.
+    intros HIn.
+    induction v; auto.
+  Admitted.
+
+  Lemma increment_complete:
+    forall vec n,
+      vector_complete vec ->
+      vector_complete (increment vec n).
+  Proof.
+      unfold vector_complete.
+      split; destruct H.
+      - apply increment_NoDup. auto.
+      - apply increment_In. auto.
+  Qed.
+
+
+    
+
 
 End VectorClock.
